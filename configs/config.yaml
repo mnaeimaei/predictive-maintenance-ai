@@ -1,0 +1,102 @@
+# ============================================================
+# Predictive Maintenance AI — Configuration
+# ============================================================
+
+data:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  n_units: 100              # number of equipment units to simulate
+  train_split: 0.70
+  val_split: 0.15
+  test_split: 0.15
+  seed: 42
+
+  # Sensor channel names (14 features)
+  sensor_cols:
+    - vibration_x
+    - vibration_y
+    - vibration_z
+    - temperature_bearing
+    - temperature_ambient
+    - pressure_in
+    - pressure_out
+    - rpm
+    - current_draw
+    - oil_viscosity
+    - acoustic_emission
+    - torque
+    - humidity
+    - voltage
+
+  # Sliding window settings
+  window_size: 30           # timesteps per sample
+  stride: 1                 # step between windows
+
+  # RUL labeling
+  rul_clip: 125             # clip RUL at this max value (piece-wise linear label)
+  failure_threshold: 30     # cycles before failure → positive class
+
+preprocessing:
+  normalize: true
+  method: "standard"        # "standard" | "minmax"
+  add_rolling_features: true
+  rolling_windows: [5, 10, 20]
+  add_fft_features: false   # set true for frequency-domain features
+
+model:
+  type: "lstm"              # "lstm" | "transformer"
+
+  lstm:
+    hidden_size: 128
+    num_layers: 3
+    dropout: 0.3
+    bidirectional: true
+
+  transformer:
+    d_model: 128
+    nhead: 8
+    num_encoder_layers: 4
+    dim_feedforward: 256
+    dropout: 0.1
+    max_seq_len: 50
+
+  # Shared output head
+  num_features: 14          # updated automatically if rolling features added
+  fc_hidden: 64
+
+training:
+  epochs: 80
+  batch_size: 128
+  learning_rate: 0.001
+  weight_decay: 1.0e-4
+  lr_scheduler: "cosine"    # "cosine" | "step" | "plateau"
+  warmup_epochs: 5
+  early_stopping_patience: 15
+  grad_clip: 1.0
+
+  # Loss weights (multi-task)
+  cls_loss_weight: 1.0      # binary cross-entropy (failure detection)
+  rul_loss_weight: 0.5      # MSE (remaining useful life)
+
+  # Class imbalance
+  use_weighted_sampler: true
+  pos_weight: 3.0           # upweight failure class in BCE loss
+
+evaluation:
+  primary_metric: "f1"      # metric used for best-model checkpoint
+  threshold: 0.5            # decision threshold for binary prediction
+
+output:
+  dir: "outputs"
+  checkpoint_name: "best_model.pt"
+  save_plots: true
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  model_path: "outputs/best_model.pt"
+  scaler_path: "outputs/scaler.pkl"
+
+mlflow:
+  tracking_uri: "http://localhost:5000"
+  experiment_name: "predictive-maintenance"
