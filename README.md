@@ -1,20 +1,19 @@
-# 🔧 Predictive Maintenance AI — Industrial Sensor Failure Detection
+# Predictive Maintenance AI — Industrial Sensor Failure Detection
 
 [](https://github.com/yourusername/predictive-maintenance-ai/actions)
-[![Python 310](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
+[![Python 3.10](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.x-orange.svg)](https://pytorch.org/)
 [![License MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 This project uses **LSTM** and **Transformer** models for predictive maintenance on industrial machinery. Given multivariate sensor time-series data, the models perform two tasks simultaneously: **Remaining Useful Life (RUL) estimation** and **failure prediction**, helping maintenance teams prevent costly breakdowns and optimize repair schedules.
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Overview](#overview)
-- [Architecture](#architecture)
 - [Dataset](#dataset)
-- [Model and Architecture Design](#Model and Architecture Design)
-- [LSTM Architectureture](#LSTM Architectureture)
-- [Transformer Architectureture](#Transformer Architectureture)
+- [Model and Architecture Design](#model-and-architecture-design)
+- [LSTM Architecture](#lstm-architecture)
+- [Transformer Architecture](#transformer-architecture)
 - [Quick Start](#quick-start)
 - [Training](#training)
 - [Evaluation](#evaluation)
@@ -26,12 +25,12 @@ This project uses **LSTM** and **Transformer** models for predictive maintenance
 
 ## Overview
 
-Industrial machinery—such as jet engines, turbines, pumps, and motors—degrades over time. The challenge is not only detecting failures but also predicting them before they occur. This project addresses two of the most critical questions in industrial operations:
+Industrial machinery — such as jet engines, turbines, pumps, and motors — degrades over time. The challenge is not only detecting failures but also predicting them before they occur. This project addresses two of the most critical questions in industrial operations:
 
 - **How long until this machine fails?** *(Remaining Useful Life estimation)*
 - **Is this machine about to fail?** *(Anomaly and fault detection)*
 
-Accurately answering these questions is the foundation of **predictive maintenance**—a strategy that enables maintenance to be performed just before equipment failure, avoiding both unnecessary scheduled replacements and costly unexpected breakdowns.
+Accurately answering these questions is the foundation of **predictive maintenance** — a strategy that enables maintenance to be performed just before equipment failure, avoiding both unnecessary scheduled replacements and costly unexpected breakdowns.
 
 Some applications of this project across different domains include:
 
@@ -45,31 +44,26 @@ Some applications of this project across different domains include:
 
 ## Dataset
 
-To study this problem, a synthetic multivariate sensor dataset was created inspired by NASA's CMAPSS benchmark—a widely used public dataset of simulated turbofan engine runs that gradually degrade until failure. CMAPSS is commonly regarded as a standard benchmark for evaluating failure prediction and remaining useful life (RUL) estimation models.
+To study this problem, a synthetic multivariate sensor dataset was created, inspired by NASA's CMAPSS benchmark — a widely used public dataset of simulated turbofan engine runs that gradually degrade until failure. CMAPSS is commonly regarded as a standard benchmark for evaluating failure prediction and remaining useful life (RUL) estimation models.
 
-The dataset simulates a fleet of machines operating under realistic conditions. Each machine contains 14 sensors that measure variables such as vibration, temperature, pressure, rotational speed, and electrical current. As the machine ages, these sensor readings gradually change to reflect degradation. The dataset also incorporates realistic measurement noise, multiple operating conditions, and occasional sensor spikes.
+The dataset simulates a fleet of machines operating under realistic conditions. Each machine has 14 sensors that measure variables such as vibration, temperature, pressure, rotational speed, and electrical current. As the machine ages, these sensor readings gradually change to reflect degradation. The dataset also incorporates realistic measurement noise, multiple operating conditions, and occasional sensor spikes.
 
-The dataset contains **22,000 records**. It has **18 columns**, grouped into four categories:
+The dataset contains **22,000 records** across **18 columns**, grouped into four categories.
 
 ### 1. Identifiers (2 columns)
 
 These columns are used for bookkeeping and are **not provided to the model as input features**.
 
-- **unit_id** — Identifies the machine to which a row belongs (1, 2, 3, ...). It is used to keep machine cycles together and to perform train/validation/test splits by machine. The dataset contains **100 unique machines**.
-  
+- **unit_id** — Identifies the machine to which a row belongs (1, 2, 3, …). It is used to keep machine cycles together and to perform train/validation/test splits by machine. The dataset contains **100 unique machines**.
+
 - **cycle** — The time step of a machine, starting from 0. The first cycle represents a new machine, while the final cycle represents the last observation before failure. This serves as the time axis.
-  
 
 ### 2. Operating Context (1 column)
 
 - **operating_regime** — Indicates one of three operating conditions:
-  
   - 0 = Light load
-    
   - 1 = Normal load
-    
   - 2 = Heavy load
-    
 
 This variable shifts sensor baselines independently of machine degradation. For example, vibration may be higher because the machine is operating under heavy load rather than because it is approaching failure. The model must learn to distinguish between operating-condition effects and actual degradation.
 
@@ -79,40 +73,39 @@ These are the model input features (**X**). Each sensor value is generated from 
 
 | Sensor | Unit | Description |
 | --- | --- | --- |
-| `vibration_x/y/z` | g   | Tri-axial accelerometer measurements |
-| `temperature_bearing` | °C  | Bearing surface temperature |
-| `temperature_ambient` | °C  | Ambient temperature |
+| `vibration_x/y/z` | g | Tri-axial accelerometer measurements |
+| `temperature_bearing` | °C | Bearing surface temperature |
+| `temperature_ambient` | °C | Ambient temperature |
 | `pressure_in/out` | bar | Inlet and outlet pressure |
 | `rpm` | RPM | Rotational speed |
-| `current_draw` | A   | Motor current consumption |
+| `current_draw` | A | Motor current consumption |
 | `oil_viscosity` | cSt | Lubrication quality |
-| `acoustic_emission` | dB  | High-frequency acoustic emission |
-| `torque` | Nm  | Load torque |
-| `humidity` | %   | Ambient humidity |
-| `voltage` | V   | Supply voltage |
+| `acoustic_emission` | dB | High-frequency acoustic emission |
+| `torque` | Nm | Load torque |
+| `humidity` | % | Ambient humidity |
+| `voltage` | V | Supply voltage |
 
 - **vibration_x, vibration_y, vibration_z** — Vibration measurements along three axes. These generally increase as components wear and become one of the strongest indicators of failure.
-  
+
 - **temperature_bearing** — Bearing temperature. Increases significantly with wear due to increased friction.
-  
+
 - **temperature_ambient** — Ambient temperature surrounding the machine. Primarily a noise feature with little predictive value.
-  
+
 - **pressure_in, pressure_out** — Inlet and outlet pressure measurements. Outlet pressure tends to decrease as the machine degrades.
-  
+
 - **rpm** — Rotational speed. Typically decreases as wear progresses.
-  
+
 - **current_draw** — Electrical current consumption. Increases as the machine requires more effort to operate.
-  
+
 - **oil_viscosity** — Lubricant viscosity. Decreases as the lubricant degrades over time.
-  
+
 - **acoustic_emission** — Acoustic or ultrasonic emission level. Generally increases with wear and during occasional anomaly spikes.
-  
+
 - **torque** — Rotational force. Increases as degradation progresses.
-  
+
 - **humidity** — Ambient humidity. Similar to ambient temperature, it serves mainly as a distractor feature.
-  
+
 - **voltage** — Supply voltage. Slightly decreases as the machine approaches failure.
-  
 
 Most sensor variables exhibit meaningful degradation trends as failure approaches, while a small number of sensors (such as ambient temperature and humidity) are intentionally uninformative, forcing the model to learn which signals are truly predictive.
 
@@ -121,26 +114,24 @@ Most sensor variables exhibit meaningful degradation trends as failure approache
 These columns are prediction targets and are **not used as model inputs**.
 
 - **RUL (Remaining Useful Life)** — The number of cycles remaining until machine failure. This value decreases from the beginning of the machine's life to zero and serves as the regression target (**y_rul**).
-  
+
 - **failure_imminent** — A binary indicator equal to 1 when **RUL ≤ 30**, and 0 otherwise. It identifies machines in their final 30 operating cycles and serves as the classification target (**y_cls**).
-  
 
 ## Model and Architecture Design
 
 The model performs two tasks simultaneously through a **multi-task learning** framework, using a window of recent sensor readings as input:
 
 1. **Regression** — *"How long until it fails?"* → Predict **Remaining Useful Life (RUL)** as the number of cycles remaining before failure. This output supports maintenance planning by estimating the available time before intervention is required.
-  
-2. **Classification** — *"Is this machine about to fail?"* → Predict **failure_imminent** (yes/no). This output serves as an early warning signal, indicating whether immediate maintenance action may be necessary.
-  
 
-LSTM and Transformer architectures were selected because predictive maintenance is fundamentally a **multivariate time-series problem**. The input consists not of a single set of sensor values but of a sequence of recent sensor observations. Therefore, temporal changes in sensor behavior must be learned in order to capture machine degradation patterns.
+2. **Classification** — *"Is this machine about to fail?"* → Predict **failure_imminent** (yes/no). This output serves as an early warning signal, indicating whether immediate maintenance action may be necessary.
+
+LSTM and Transformer architectures were selected because predictive maintenance is fundamentally a **multivariate time-series problem**. The input consists not of a single set of sensor values but of a sequence of recent sensor observations. Temporal changes in sensor behavior must therefore be learned in order to capture machine degradation patterns.
 
 The **LSTM** architecture is well suited for this task because sequences are processed step by step, enabling temporal degradation patterns to be captured through recurrent memory mechanisms.
 
-The **Transformer** architecture is also well suited for this task because its attention mechanism allows each timestep to be compared directly with all other timesteps within the input window. This capability enables important degradation signals, anomalous spikes, and long-range temporal dependencies to be identified effectively.
+The **Transformer** architecture is also well suited for this task because its attention mechanism allows each timestep to be compared directly with all other timesteps within the input window. This enables important degradation signals, anomalous spikes, and long-range temporal dependencies to be identified effectively.
 
-Other approaches, including Random Forest, XGBoost, CNN, GRU, and Autoencoder-based models, could also be employed as baseline methods or future extensions. However, LSTM and Transformer architectures were selected to compare two powerful sequence-modeling paradigms: **recurrent memory-based learning** and **attention-based learning**.
+Other approaches — including Random Forest, XGBoost, CNN, GRU, and autoencoder-based models — could also be employed as baseline methods or future extensions. However, LSTM and Transformer architectures were selected to compare two powerful sequence-modeling paradigms: **recurrent memory-based learning** and **attention-based learning**.
 
 ```text
 Raw Sensor Stream
@@ -172,7 +163,7 @@ Raw Sensor Stream
    FastAPI /predict
 ```
 
-The project follows a modular structure that separates data processing, model development, training, evaluation, deployment, and testing components. This organization improves maintainability, scalability, and reproducibility.
+The project follows a modular structure that separates data processing, model development, training, evaluation, deployment, and testing. This organization improves maintainability, scalability, and reproducibility.
 
 ```text
 predictive-maintenance-ai/
@@ -210,7 +201,7 @@ predictive-maintenance-ai/
 
 ## LSTM Architecture
 
-`The` predictive maintenance model is implemented as a **Stacked Bidirectional LSTM (Bi-LSTM)** operating on multivariate sensor time-series. It follows a **multi-task learning** paradigm, sharing a single temporal feature extractor across two prediction objectives:
+The predictive maintenance model is implemented as a **Stacked Bidirectional LSTM (Bi-LSTM)** operating on multivariate sensor time-series. It follows a **multi-task learning** paradigm, sharing a single temporal feature extractor across two prediction objectives:
 
 1. **Remaining Useful Life (RUL) Estimation** — a regression task producing a continuous estimate of cycles remaining before failure
 2. **Failure Imminence Detection** — a binary classification task producing a probability of imminent failure
@@ -219,7 +210,7 @@ This joint formulation allows the model to learn degradation dynamics that gener
 
 ---
 
-#### Design Choices
+### Design Choices
 
 **Stacked LSTM (3 layers).** Hierarchical stacking enables the network to capture temporal patterns at multiple timescales — from cycle-level fluctuations in the lower layers to longer-term degradation trends in the upper layers.
 
@@ -233,7 +224,7 @@ This joint formulation allows the model to learn degradation dynamics that gener
 
 ---
 
-#### Architecture
+### Architecture
 
 ```
 Input:  (B × T × F)
@@ -276,11 +267,11 @@ Input:  (B × T × F)
         ┌────────┴────────────────────┐
         ▼                             ▼
 ┌───────────────────┐   ┌─────────────────────────┐
-│Classification     │   │      Regression Head    │
-│     Head          │   │                         │
+│ Classification    │   │      Regression Head    │
+│ Head              │   │                         │
 │                   │   │  Linear(64 → 32) + ReLU │
-│ Linear(64→1)      │   │  Linear(32 → 1)  + ReLU │
-│   + Sigmoid       │   │                         │
+│ Linear(64 → 1)    │   │  Linear(32 → 1)  + ReLU │
+│ + Sigmoid         │   │                         │
 │                   │   │  Output: RUL (cycles)   │
 │ Output: P(failure)│   │                         │
 └───────────────────┘   └─────────────────────────┘
@@ -288,7 +279,7 @@ Input:  (B × T × F)
 
 ---
 
-#### Configuration Summary
+### Configuration Summary
 
 | Component | Configuration |
 | --- | --- |
@@ -303,7 +294,7 @@ Input:  (B × T × F)
 
 ---
 
-#### What the Model Learns
+### What the Model Learns
 
 The Bi-LSTM stack learns to encode the trajectory of sensor readings over a 30-cycle window into a compact latent vector that captures both the current degradation state and its rate of change. The shared representation then supports two complementary views of machine health: a continuous estimate of remaining life, and a risk probability for operators who need a simple threshold-based alert. Because both heads are trained jointly, the shared features must remain informative for both objectives throughout training.
 
@@ -314,11 +305,11 @@ The predictive maintenance model is implemented as an **encoder-only Transformer
 1. **Remaining Useful Life (RUL) Estimation** — a regression task producing a continuous estimate of cycles remaining before failure
 2. **Failure Imminence Detection** — a binary classification task producing a probability of imminent failure
 
-The key distinction from the recurrent model is the use of **multi-head self-attention** in place of sequential state propagation. Rather than accumulating information step-by-step, the Transformer processes all timesteps in parallel and learns pairwise relevance across the entire observation window — making it better suited for capturing long-range dependencies and non-local degradation patterns.
+The key distinction from the recurrent model is the use of **multi-head self-attention** in place of sequential state propagation. Rather than accumulating information step by step, the Transformer processes all timesteps in parallel and learns pairwise relevance across the entire observation window — making it better suited for capturing long-range dependencies and non-local degradation patterns.
 
 ---
 
-#### Design Choices
+### Design Choices
 
 **Linear input projection.** Raw sensor vectors (14-dimensional) are projected into a higher-dimensional embedding space (128-dimensional) before encoding. This allows the model to learn cross-sensor interactions — for example, the joint signature of rising temperature and increasing vibration — rather than treating each sensor independently.
 
@@ -334,7 +325,7 @@ The key distinction from the recurrent model is the use of **multi-head self-att
 
 ---
 
-#### Architecture
+### Architecture
 
 ```
 Input:  (B × T × F)
@@ -383,15 +374,15 @@ Input:  (B × T × F)
         ┌────────┴────────┐
         ▼                 ▼
 
-┌───────────────┐   ┌─────────────────────────┐
-│Classification │   │      Regression Head    │
-│     Head      │   │                         │
-│               │   │  Linear(64 → 32) + ReLU │
-│ Linear(64→1)  │   │  Linear(32 → 1)  + ReLU │
-│   + Sigmoid   │   │                         │
-│               │   │  Output: RUL (cycles)   │
-│ Output: P(failure)│  └─────────────────────────┘
-└───────────────┘
+┌────────────────────┐   ┌─────────────────────────┐
+│ Classification     │   │      Regression Head    │
+│ Head               │   │                         │
+│                    │   │  Linear(64 → 32) + ReLU │
+│ Linear(64 → 1)     │   │  Linear(32 → 1)  + ReLU │
+│ + Sigmoid          │   │                         │
+│                    │   │  Output: RUL (cycles)   │
+│ Output: P(failure) │   │                         │
+└────────────────────┘   └─────────────────────────┘
 ```
 
 Each Transformer encoder layer has the internal structure:
@@ -408,14 +399,14 @@ The 30×30 attention score matrix computed at each layer encodes how strongly ea
 
 ---
 
-#### Configuration Summary
+### Configuration Summary
 
 | Component | Configuration |
 | --- | --- |
 | Input window | 30 timesteps × 14 features |
 | Input projection | 14 → 128 |
 | Positional encoding | Sinusoidal (fixed) |
-| Encoder layers | 4   |
+| Encoder layers | 4 |
 | Attention heads | 8 (16 dims each) |
 | FFN hidden dim | 256 |
 | Readout | Mean pooling over time |
@@ -426,7 +417,7 @@ The 30×30 attention score matrix computed at each layer encodes how strongly ea
 
 ---
 
-#### What the Model Learns
+### What the Model Learns
 
 Each encoder layer refines a contextual representation of every timestep by gathering information from the rest of the window through self-attention. After four such refinement passes, mean pooling distills this enriched sequence into a single vector that summarizes the machine's degradation state over the full 30-cycle window. The shared dense layer then projects this summary into a space that jointly supports a continuous RUL estimate and a binary failure-risk score — two complementary views of the same underlying health trajectory.
 
@@ -481,7 +472,7 @@ python src/train.py --config configs/config.yaml --mlflow
 Training produces:
 
 - `outputs/best_model.pt` — best checkpoint (by validation F1)
-- `outputs/training_curves.png` — loss/metric plots
+- `outputs/training_curves.png` — loss and metric plots
 - MLflow run with all hyperparameters and artifacts
 
 ---
@@ -510,18 +501,18 @@ Start the service:
 uvicorn src.api.app:app --host 0.0.0.0 --port 8000
 ```
 
-Interactive docs at `http://localhost:8000/docs`
+Interactive docs available at `http://localhost:8000/docs`.
 
 ### Endpoints
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
 | `GET` | `/health` | Service health check |
-| `POST` | `/predict` | Single window prediction |
+| `POST` | `/predict` | Single-window prediction |
 | `POST` | `/predict/batch` | Batch predictions |
 | `GET` | `/model/info` | Model metadata |
 
-### Example request
+### Example Request
 
 ```bash
 curl -X POST http://localhost:8000/predict \
@@ -532,7 +523,7 @@ curl -X POST http://localhost:8000/predict \
   }'
 ```
 
-### Example response
+### Example Response
 
 ```json
 {
@@ -554,7 +545,7 @@ curl -X POST http://localhost:8000/predict \
 # Build and run with Docker Compose
 docker-compose up --build
 
-# Or directly
+# Or run directly
 docker build -t pm-ai .
 docker run -p 8000:8000 pm-ai
 ```
@@ -563,7 +554,7 @@ docker run -p 8000:8000 pm-ai
 
 ## Results
 
-Evaluated on a held-out test set of 20 equipment units (not seen during training):
+Evaluated on a held-out test set of 20 equipment units not seen during training:
 
 | Metric | LSTM | Transformer |
 | --- | --- | --- |
@@ -573,7 +564,7 @@ Evaluated on a held-out test set of 20 equipment units (not seen during training
 | RUL RMSE (cycles) | 11.2 | 9.8 |
 | Inference latency | 4 ms | 9 ms |
 
-Early warning: the system detects failures an average of **18 cycles** before occurrence.
+The system detects failures an average of **18 cycles** before occurrence.
 
 ---
 
