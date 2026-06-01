@@ -138,7 +138,7 @@ Raw Sensor Stream
        │
        ▼
 ┌─────────────────┐
-│  Preprocessing  │  Normalization, sliding window, missing value imputation
+│  Preprocessing   │  Normalization, sliding window, missing value imputation
 └────────┬────────┘
          │
          ▼
