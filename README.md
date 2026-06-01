@@ -138,25 +138,25 @@ Raw Sensor Stream
        │
        ▼
 ┌─────────────────┐
-│  Preprocessing   │  Normalization, sliding window, missing value imputation
+│  Preprocessing    │  Normalization, sliding window, missing value imputation
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
-│  Feature Eng.   │  Rolling statistics, FFT features, RUL labeling
+│  Feature Eng.     │  Rolling statistics, FFT features, RUL labeling
 └────────┬────────┘
          │
     ┌────┴────┐
-    │         │
-    ▼         ▼
+    │          │
+    ▼          ▼
 ┌───────┐ ┌──────────────┐
-│ LSTM  │ │ Transformer  │  Two model variants selected via configuration
+│ LSTM  │ │ Transformer    │  Two model variants selected via configuration
 └───┬───┘ └──────┬───────┘
     └─────┬──────┘
           │
           ▼
 ┌─────────────────┐
-│ Dual Head Output│  Binary failure prediction + RUL regression
+│ Dual Head Output │  Binary failure prediction + RUL regression
 └────────┬────────┘
          │
          ▼
@@ -235,45 +235,45 @@ Input:  (B × T × F)
          │
          ▼
 ┌─────────────────────────────────┐
-│         Bi-LSTM Layer 1         │
-│   hidden_size = 128  (× 2 dir)  │  → output: B × T × 256
+│         Bi-LSTM Layer 1            │
+│   hidden_size = 128  (× 2 dir)     │  → output: B × T × 256
 └────────────────┬────────────────┘
                  │
                  ▼
 ┌─────────────────────────────────┐
-│         Bi-LSTM Layer 2         │
-│   hidden_size = 128  (× 2 dir)  │  → output: B × T × 256
+│         Bi-LSTM Layer 2            │
+│   hidden_size = 128  (× 2 dir)     │  → output: B × T × 256
 └────────────────┬────────────────┘
                  │
                  ▼
 ┌─────────────────────────────────┐
-│         Bi-LSTM Layer 3         │
-│   hidden_size = 128  (× 2 dir)  │  → output: B × T × 256
+│         Bi-LSTM Layer 3            │
+│   hidden_size = 128  (× 2 dir)     │  → output: B × T × 256
 └────────────────┬────────────────┘
                  │
          Select h_T (last timestep)
                  │
                  ▼
 ┌─────────────────────────────────┐
-│           LayerNorm             │  → B × 256
+│           LayerNorm                │  → B × 256
 └────────────────┬────────────────┘
                  │
                  ▼
 ┌─────────────────────────────────┐
-│    Linear(256 → 64) + ReLU      │
-│           + Dropout             │  → B × 64  (shared representation)
+│    Linear(256 → 64) + ReLU         │
+│           + Dropout                │  → B × 64  (shared representation)
 └────────────────┬────────────────┘
-                 │
+                  │
         ┌────────┴────────────────────┐
         ▼                             ▼
 ┌───────────────────┐   ┌─────────────────────────┐
-│ Classification    │   │      Regression Head    │
-│ Head              │   │                         │
-│                   │   │  Linear(64 → 32) + ReLU │
-│ Linear(64 → 1)    │   │  Linear(32 → 1)  + ReLU │
-│ + Sigmoid         │   │                         │
-│                   │   │  Output: RUL (cycles)   │
-│ Output: P(failure)│   │                         │
+│ Classification      │   │      Regression Head      │
+│ Head                │   │                           │
+│                     │   │  Linear(64 → 32) + ReLU   │
+│ Linear(64 → 1)      │   │  Linear(32 → 1)  + ReLU   │
+│ + Sigmoid           │   │                           │
+│                     │   │  Output: RUL (cycles)     │
+│ Output: P(failure)  │   │                           │
 └───────────────────┘   └─────────────────────────┘
 ```
 
@@ -336,52 +336,52 @@ Input:  (B × T × F)
          │
          ▼
 ┌─────────────────────────────────┐
-│    Linear Projection            │
-│    14 → 128                     │  → B × T × 128
+│    Linear Projection               │
+│    14 → 128                        │  → B × T × 128
 └────────────────┬────────────────┘
                  │
                  ▼
 ┌─────────────────────────────────┐
-│   Sinusoidal Positional         │
-│   Encoding (fixed)              │  → B × T × 128
+│   Sinusoidal Positional            │
+│   Encoding (fixed)                 │  → B × T × 128
 └────────────────┬────────────────┘
                  │
                  ▼
 ┌─────────────────────────────────┐
-│   Transformer Encoder Layer 1   │
-│   d_model=128, nhead=8, FFN     │
-│   dim=256, residual+LayerNorm   │  → B × T × 128
+│   Transformer Encoder Layer 1      │
+│   d_model=128, nhead=8, FFN        │
+│   dim=256, residual+LayerNorm      │  → B × T × 128
 └────────────────┬────────────────┘
                  │  (× 3 more layers)
                  ▼
 ┌─────────────────────────────────┐
-│   Transformer Encoder Layer 4   │  → B × T × 128
+│   Transformer Encoder Layer 4      │  → B × T × 128
 └────────────────┬────────────────┘
                  │
          Mean Pooling over T
                  │
                  ▼
 ┌─────────────────────────────────┐
-│           LayerNorm             │  → B × 128
+│           LayerNorm                │  → B × 128
 └────────────────┬────────────────┘
                  │
                  ▼
 ┌─────────────────────────────────┐
-│  Linear(128 → 64) + GELU        │
-│         + Dropout               │  → B × 64  (shared representation)
+│  Linear(128 → 64) + GELU           │
+│         + Dropout                  │  → B × 64  (shared representation)
 └────────────────┬────────────────┘
                  │
         ┌────────┴────────┐
         ▼                 ▼
 
 ┌────────────────────┐   ┌─────────────────────────┐
-│ Classification     │   │      Regression Head    │
-│ Head               │   │                         │
-│                    │   │  Linear(64 → 32) + ReLU │
-│ Linear(64 → 1)     │   │  Linear(32 → 1)  + ReLU │
-│ + Sigmoid          │   │                         │
-│                    │   │  Output: RUL (cycles)   │
-│ Output: P(failure) │   │                         │
+│ Classification       │   │      Regression Head      │
+│ Head                 │   │                           │
+│                      │   │  Linear(64 → 32) + ReLU   │
+│ Linear(64 → 1)       │   │  Linear(32 → 1)  + ReLU   │
+│ + Sigmoid            │   │                           │
+│                      │   │  Output: RUL (cycles)     │
+│ Output: P(failure)   │   │                           │
 └────────────────────┘   └─────────────────────────┘
 ```
 
